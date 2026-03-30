@@ -1,0 +1,110 @@
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+public class CodeToRefactor {
+    
+    public static class People {
+        private static final OffsetDateTime Under16 = OffsetDateTime.now().minusYears(15);  /* MS:27/03/2026: should not be a constant, should be calculated dynamically.
+																																															 Under16 is just representing 15 years ago and not under 16 in actuals. */
+        private String name;
+        private OffsetDateTime dob;
+
+        public People(String name)
+        {
+            this(name, Under16.toLocalDateTime());
+        }
+
+        public People(String name, LocalDateTime dob) {
+            this.name = name;
+            this.dob = dob.atOffset(OffsetDateTime.now().getOffset());
+        }
+
+        public String getName() 
+        {
+            return name;
+        }
+
+        public OffsetDateTime getDob() { // MS:27/03/2026: defined as getDob() here but referenced in getBobs() as getDOB(), won't compile
+            return dob;
+        }
+    }
+
+    public static class BirthingUnit
+    {
+        /**
+         * MaxItemsToRetrieve
+         */
+        private List<People> people;
+
+        public BirthingUnit() {
+            people = new ArrayList<>();
+        }
+
+        /**
+         * GetPeoples
+         * @param j
+         * @return List<Object>
+         */
+        public List<People> getPeople(int i)
+        {
+            for (int j = 0; j < i; j++) {
+                try 
+                {
+                    // Creates a dandon Name
+                    String name = "";
+                    Random random = new Random();  //MS:27/03/2026: creating Random inside the loop is not efficient, should reuse a single instance 
+                    if (random.nextInt(1) == 0) {  //MS:27/03/2026: nextInt(1) is 0, so the name will always be set to Bob and never goes to else part.
+                        name = "Bob";
+                    } else { name = "Betty"; }
+                    // Adds new people to the list
+                    people.add(new People(name, LocalDateTime.now().minusDays(random.nextInt(18, 85) * 356))); //MS:27/03/2026: number of days should be 365/year
+                } 
+                catch (Exception e)
+                {
+                    // Dont think this should ever happen
+                    throw new RuntimeException("Something failed in user creation");
+                }
+            }
+            return people;
+        }
+
+        private List<People> getBobs(boolean olderThan30) {
+            return olderThan30 ? people.stream().filter(x -> x.getName().equals("Bob") && !x.getDOB().isBefore(LocalDateTime.now().minus(Duration.ofDays(30 * 356)))).collect(Collectors.toList()) : people.stream().filter(x -> x.getName().equals("Bob")).collect(Collectors.toList());
+						/* MS:27/03/2026: --the logic to check olderThan30=true is inverted, which means younger not older. the logic does the opposite of what it is supposed to do. 
+															--possibility of getting null pointer exception if getName() is null
+															--there is a typo 356 instead of 365 */
+        }
+
+        public String getMarried(People p, String lastName)
+        {
+            if (lastName.contains("test"))   // MS:27/03/2026: names check should be case insensitive
+                return p.getName();
+            if ((p.getName().length() + lastName).length() > 255) { /* MS:27/03/2026: inner getName().length() returns integer and then concatenates 
+																																											with string lastName --which gives wrong length calculation */
+                (p.getName() + " " + lastName).substring(0, 255);  // MS:27/03/2026: substring results need to be stored or returned. code is not useful
+            }
+
+            return p.getName() + " " + lastName;
+        }
+    }
+}
+
+/*
+The most concerning code smell to me is creating Random() inside the for loop because doing this creates unnecessary objects and mmakes 
+					it very inefficient. Also the kind of bugs found indicates that the code was never compiled and lacks even basic unit tests.
+
+I would like author to clarify on these:
+	--In getPeople(), first: what is the intention to split? Is it supposed to be based on int i ? in that case, a for loop would be useful to generate randoms based on passed int
+								 secondly: since we have only two names Bob and Betty, is it to have a Bob/Betty split?
+								 third: if there is an intention to use int i for spliting, then make sure there are 2 values passed when calling this 
+												function i.e either 0 or 1 so that it for Bob and Betty split
+
+	--What's the purpose of lastName.contains("test") check in getMarried() ? It doesn't indicate any business rule behind it. or it is just for 
+			test harness. If it is just a test, I am expecting there should be a dummy name to return like 'test_name'
+	
+	--I want to get more more clarity on the generation of names randomly. The current code only generates Bob nothing else.
+*/
