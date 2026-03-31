@@ -22,21 +22,17 @@ To start with, we need model which will be responsible for storage and retreival
 
 These are defined in a simple layout as:
 
+```
 src/main/java/com/example/deck
-├── model
-│ ├── Card.java
-│ ├── Suit.java
-│ ├── Rank.java
-│ └── Deck.java
-├── service
-│ └── DeckService.java
-├── web
-│ └── DeckController.java
+├── model (Card, Suit, Rank, Deck)
+├── service (DeckService)
+├── web (DeckController)
 └── DeckApplication.java
 
-src/main/resources
-├── static/cards/ (52 card images)
-└── templates/deck.html (UI layout)
+resources
+├── static/cards (52 images)
+└── templates/deck.html
+```
 
 ## 3. API design and UI
 
@@ -69,11 +65,11 @@ Another approach I considered for building UI for this scenario is React. React 
 
 ## 5. Delivery pipeline
 
-Build the project
--mvn clean verify
+###Build the project
+mvn clean verify
 
-Package
--mvn package  (this generates .jar for the project in the target)
+###Package
+mvn package  (this generates .jar for the project in the target)
 		
 
-### I have create a second prototype using Oracle APEX just as an alternative.
+### I have create a second prototype using Oracle APEX just as an alternative. The document is in location /Exercise 3/Additional concept using Oracle APEX (second in priority)/Oracle APEX concept Deck cards.docx
